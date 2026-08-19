@@ -43,17 +43,45 @@ document.addEventListener('DOMContentLoaded', function () {
   var yearEl = document.getElementById('year');
   if (yearEl) { yearEl.textContent = new Date().getFullYear(); }
 
-  // Contact form (static hosting — see README for connecting a form backend)
+  // Contact form — submits to Formspree (see contact.html form action)
   var form = document.querySelector('.contact-form');
   if (form) {
     form.addEventListener('submit', function (e) {
       e.preventDefault();
       var success = document.querySelector('.form-success');
-      if (success) {
-        success.classList.add('show');
-        success.setAttribute('role', 'status');
-      }
-      form.reset();
+      var submitBtn = form.querySelector('button[type="submit"]');
+      var originalBtnText = submitBtn ? submitBtn.textContent : '';
+      if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Sending…'; }
+      if (success) { success.classList.remove('show'); success.classList.remove('form-error'); }
+
+      fetch(form.action, {
+        method: 'POST',
+        body: new FormData(form),
+        headers: { 'Accept': 'application/json' }
+      }).then(function (response) {
+        if (response.ok) {
+          if (success) {
+            success.textContent = "Thanks — your message has been sent. We'll be in touch shortly.";
+            success.classList.remove('form-error');
+            success.classList.add('show');
+          }
+          form.reset();
+        } else {
+          if (success) {
+            success.textContent = "Something went wrong sending your message. Please email us directly at zslholdings.info@gmail.com.";
+            success.classList.add('show');
+            success.classList.add('form-error');
+          }
+        }
+      }).catch(function () {
+        if (success) {
+          success.textContent = "Something went wrong sending your message. Please email us directly at zslholdings.info@gmail.com.";
+          success.classList.add('show');
+          success.classList.add('form-error');
+        }
+      }).finally(function () {
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = originalBtnText; }
+      });
     });
   }
 });
